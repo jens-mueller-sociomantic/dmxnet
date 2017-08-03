@@ -932,3 +932,46 @@ public class LinearRegressionOutput : Symbol
         test!("!is")(lr.handle(), null);
     }
 }
+
+
+/*******************************************************************************
+
+    A symbol representing the sum of two input symbols
+
+*******************************************************************************/
+
+public class Sum : Symbol
+{
+    /***************************************************************************
+
+        Constructs a symbol representing the sum `x` and `y`
+
+        Params:
+            x = left-hand side operand of the addition
+            y = right-hand side operand of the addition
+
+    ***************************************************************************/
+
+    public this (Symbol x, Symbol y)
+    in
+    {
+        assert(x !is null);
+        assert(y !is null);
+    }
+    body
+    {
+        super("elemwise_add", null, null);
+        this.compose([x.handle, y.handle], null, null);
+    }
+
+    unittest
+    {
+        scope x = new Variable("x");
+        scope (exit) x.freeHandle();
+        scope y = new Variable("y");
+        scope (exit) y.freeHandle();
+        scope sum = new Sum(x, y);
+        scope (exit) sum.freeHandle();
+        test!("!is")(sum.handle(), null);
+    }
+}
