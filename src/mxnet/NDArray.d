@@ -600,7 +600,7 @@ public class NDArray (T)
 
     ***************************************************************************/
 
-    public void opAssign (T scalar)
+    public void opAssign (float scalar)
     in
     {
         assert(this.mxnet_ndarray.exists());
@@ -742,7 +742,7 @@ public class NDArray (T)
 
     ***************************************************************************/
 
-    public NDArray opMulAssign (T rhs)
+    public NDArray opMulAssign (float rhs)
     in
     {
         assert(this.mxnet_ndarray.exists());
@@ -1377,7 +1377,7 @@ unittest
 private NDArray!(T) applyScalarOp (T) (istring op_name,
                                        NDArray!(T) result,
                                        NDArray!(T) lhs,
-                                       T rhs)
+                                       float rhs)
 in
 {
     assert(endsWith(op_name, "_scalar"));
