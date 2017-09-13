@@ -432,14 +432,16 @@ public class MXNetHandle (HandleType, alias FreeHandleFunction)
         {
             if (this.exists())
             {
-                // we require manual resource management by calling
-                // `freeHandle` to free MXNet resources explicitly and never
-                // rely on the destructor
+                // Relying on the GC calling this destructor to free the handle
+                // is problematic since it may not be in-time. For this reason,
+                // we recommend users of `MXNetHandle` to free MXNet resources
+                // by calling `freeHandle` manually, and never relying on the
+                // destructor.
                 //
-                // relying on the GC calling this destructor to free the handle
-                // is problematic since it may not be in-time
-                // performing a manual `delete` or `destroy` is technically
-                // fine but forbidden by policy
+                // If this policy is followed, then the handle should already
+                // have been freed by the time the destructor is initiated.
+                // This debug check should help in tracking down any handles
+                // for which this has not been done.
                 sformat((cstring str) { write(STDERR_FILENO, str.ptr, str.length); },
                         "Non-null handle {:x} in MXNetHandle destructor!\n",
                         this.c_api_handle);
