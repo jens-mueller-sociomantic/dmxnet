@@ -22,11 +22,13 @@ import mxnet.c.c_api;
 import mxnet.Exception;
 
 import ocean.meta.types.Qualifiers;
+import ocean.text.convert.Formatter;
 import ocean.text.util.StringC;
 
 version (unittest)
 {
     import ocean.core.Test;
+    import ocean.io.Stdout;
 }
 
 version (unittest)
@@ -156,4 +158,151 @@ unittest
 public void notifyShutdown ()
 {
     invoke!(MXNotifyShutdown)();
+}
+
+
+/*******************************************************************************
+
+    Reports the MXNet version
+
+    This will report the used MXNet version, i.e., the version that is reported
+    by the linked library.
+
+    Returns:
+        the used MXNet version
+
+*******************************************************************************/
+
+public MXNetVersion mxnetVersion ()
+{
+    int version_;
+    invoke!(MXGetVersion)(&version_);
+    assert(version_ >= 0);
+    return mxnetVersion(version_);
+}
+
+unittest
+{
+    Stdout.formatln("Using MXNet version {}", mxnetVersion());
+}
+
+
+/*******************************************************************************
+
+    To represent MXNet versions
+
+*******************************************************************************/
+
+public struct MXNetVersion
+{
+    /***************************************************************************
+
+        Major version
+
+    ***************************************************************************/
+
+    uint major;
+
+
+    /***************************************************************************
+
+        Minor version
+
+    ***************************************************************************/
+
+    ubyte minor;
+
+
+    /***************************************************************************
+
+        Patch version
+
+    ***************************************************************************/
+
+    ubyte patch;
+
+
+    /***************************************************************************
+
+        Formats this version
+
+        This method is used by `ocean.text.convert.Formatter` when this needs
+        to formatted.
+
+        Params:
+            sink = delegate to write the formatting to
+
+    ***************************************************************************/
+
+    public void toString (scope FormatterSink sink)
+    {
+        sink("{}.{}.{}".format(this.major, this.minor, this.patch));
+    }
+}
+
+
+/*******************************************************************************
+
+    Converts the given MXNet version and returns it
+
+    Params:
+        mxnet_version = version encoded in `major * 10000 + minor * 100 + patch`
+
+    Returns:
+        the used MXNet version
+
+*******************************************************************************/
+
+private MXNetVersion mxnetVersion (uint mxnet_version)
+{
+    // major * 10_000 + minor * 100 + patch
+    // see `MXNET_VERSION` is defined in `include/mxnet/base.h`
+    return mxnetVersion(mxnet_version / 10_000,
+                        mxnet_version % 10_000 / 100,
+                        mxnet_version % 100);
+}
+
+unittest
+{
+    test!("==")(mxnetVersion(0), mxnetVersion(0, 0, 0));
+    test!("==")(mxnetVersion(1), mxnetVersion(0, 0, 1));
+    test!("==")(mxnetVersion(10000), mxnetVersion(1, 0, 0));
+    test!("==")(mxnetVersion(10203), mxnetVersion(1, 2, 3));
+    test!("==")(mxnetVersion(10209), mxnetVersion(1, 2, 9));
+
+    // testing boundaries
+    test!("==")(mxnetVersion(99), mxnetVersion(0, 0, 99));
+    test!("==")(mxnetVersion(100), mxnetVersion(0, 1, 0));
+    test!("==")(mxnetVersion(9900), mxnetVersion(0, 99, 0));
+    test!("==")(mxnetVersion(10000), mxnetVersion(1, 0, 0));
+    test!("==")(mxnetVersion(19999), mxnetVersion(1, 99, 99));
+    test!("==")(mxnetVersion(99999), mxnetVersion(9, 99, 99));
+    test!("==")(mxnetVersion(999999), mxnetVersion(99, 99, 99));
+    test!("==")(mxnetVersion(4294960000), mxnetVersion(429496, 0, 0));
+}
+
+
+/*******************************************************************************
+
+    Returns the specified MXNet version
+
+    Params:
+        major = specifies the major version
+        minor = specifies the minor version
+        patch = specifies the patch version
+
+    Returns:
+        the specified MXNet version
+
+*******************************************************************************/
+
+private MXNetVersion mxnetVersion (uint major, ubyte minor, ubyte patch)
+{
+    MXNetVersion version_ =
+    {
+        major : major,
+        minor : minor,
+        patch : patch,
+    };
+    return version_;
 }
