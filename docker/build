@@ -3,7 +3,7 @@ set -eux
 
 # Add sociomantic-tsunami mxnet APT repo
 dist="$(lsb_release -cs)"
-echo "deb https://dl.bintray.com/sociomantic-tsunami/mxnet $dist release" \
+echo "deb https://dl.bintray.com/sociomantic-tsunami/mxnet $dist release prerelease" \
     >> /etc/apt/sources.list.d/mxnet.list
 
 # Update already-installed packages
