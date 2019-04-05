@@ -12,5 +12,5 @@ apt-get -y upgrade
 
 # Install dmxnet dependencies
 apt-get install -y \
-    libmxnet \
+    libmxnet=1.2.0-0tsunami1+rc.1~xenial \
     zlib1g-dev
