@@ -6,8 +6,8 @@
     upstream `mxnet/c_api.h` header file.  For details, please consult the
     original header documentation: <http://mxnet.io/doxygen/c__api_8h.html>
 
-    This module was generated from mxnet/c_api.h version 1.3.0
-    (<https://github.com/dmlc/mxnet/blob/1.3.0/include/mxnet/c_api.h>).
+    This module was generated from mxnet/c_api.h version 1.3.1
+    (<https://github.com/dmlc/mxnet/blob/1.3.1/include/mxnet/c_api.h>).
 
     The bindings were generated using dstep v0.2.3 with the command line
     argument `--single-line-function-signatures=true` and
@@ -437,12 +437,22 @@ int MXGetGPUCount (int* out_);
 
 /*!
  * \brief get the free and total available memory on a GPU
+ *  Note: Deprecated, use MXGetGPUMemoryInformation64 instead.
  * \param dev the GPU number to query
  * \param free_mem pointer to the integer holding free GPU memory
  * \param total_mem pointer to the integer holding total GPU memory
  * \return 0 when success, -1 when failure happens
  */
 int MXGetGPUMemoryInformation (int dev, int* free_mem, int* total_mem);
+
+/*!
+ * \brief get the free and total available memory on a GPU
+ * \param dev the GPU number to query
+ * \param free_mem pointer to the uint64_t holding free GPU memory
+ * \param total_mem pointer to the uint64_t holding total GPU memory
+ * \return 0 when success, -1 when failure happens
+ */
+int MXGetGPUMemoryInformation64 (int dev, ulong* free_mem, ulong* total_mem);
 
 /*!
  * \brief get the MXNet library version as an integer
