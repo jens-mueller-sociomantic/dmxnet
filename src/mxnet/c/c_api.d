@@ -6,8 +6,8 @@
     upstream `mxnet/c_api.h` header file.  For details, please consult the
     original header documentation: <http://mxnet.io/doxygen/c__api_8h.html>
 
-    This module was generated from mxnet/c_api.h version 1.2.0
-    (<https://github.com/dmlc/mxnet/blob/1.2.0/include/mxnet/c_api.h>).
+    This module was generated from mxnet/c_api.h version 1.2.1
+    (<https://github.com/dmlc/mxnet/blob/1.2.1/include/mxnet/c_api.h>).
 
     The bindings were generated using dstep v0.2.3 with the command line
     argument `--single-line-function-signatures=true` and
