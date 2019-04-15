@@ -6,8 +6,8 @@
     upstream `mxnet/c_api.h` header file.  For details, please consult the
     original header documentation: <http://mxnet.io/doxygen/c__api_8h.html>
 
-    This module was generated from mxnet/c_api.h version 1.2.1
-    (<https://github.com/dmlc/mxnet/blob/1.2.1/include/mxnet/c_api.h>).
+    This module was generated from mxnet/c_api.h version 1.3.0
+    (<https://github.com/dmlc/mxnet/blob/1.3.0/include/mxnet/c_api.h>).
 
     The bindings were generated using dstep v0.2.3 with the command line
     argument `--single-line-function-signatures=true` and
@@ -240,7 +240,17 @@ int MXRandomSeedContext (int seed, int dev_type, int dev_id);
 int MXNotifyShutdown ();
 
 /*!
- * \brief Set up configuration of profiler
+ * \brief Set up configuration of profiler for the process passed as profile_process in keys
+ * \param num_params Number of parameters
+ * \param keys array of parameter keys
+ * \param vals array of parameter values
+ * \param kvstoreHandle handle to kvstore
+ * \return 0 when success, -1 when failure happens.
+ */
+int MXSetProcessProfilerConfig (int num_params, const(char*)* keys, const(char*)* vals, KVStoreHandle kvstoreHandle);
+
+/*!
+ * \brief Set up configuration of profiler for worker/current process
  * \param num_params Number of parameters
  * \param keys array of parameter keys
  * \param vals array of parameter values
@@ -249,7 +259,20 @@ int MXNotifyShutdown ();
 int MXSetProfilerConfig (int num_params, const(char*)* keys, const(char*)* vals);
 
 /*!
- * \brief Set up state of profiler
+ * \brief Set up state of profiler for either worker or server process
+ * \param state indicate the working state of profiler,
+ *  profiler not running when state == 0,
+ *  profiler running when state == 1
+ * \param profile_process an int,
+ * when 0 command is for worker/current process,
+ * when 1 command is for server process
+ * \param kvstoreHandle handle to kvstore, needed for server process profiling
+ * \return 0 when success, -1 when failure happens.
+ */
+int MXSetProcessProfilerState (int state, int profile_process, KVStoreHandle kvStoreHandle);
+
+/*!
+ * \brief Set up state of profiler for current process
  * \param state indicate the working state of profiler,
  *  profiler not running when state == 0,
  *  profiler running when state == 1
@@ -259,6 +282,17 @@ int MXSetProfilerState (int state);
 
 /*!
  * \brief Save profile and stop profiler
+ * \param finished true if stat output should stop after this point
+ * \param profile_process an int,
+ * when 0 command is for worker/current process,
+ * when 1 command is for server process
+ * \param kvstoreHandle handle to kvstore
+ * \return 0 when success, -1 when failure happens.
+ */
+int MXDumpProcessProfile (int finished, int profile_process, KVStoreHandle kvStoreHandle);
+
+/*!
+ * \brief Save profile and stop profiler for worker/current process
  * \param finished true if stat output should stop after this point
  * \return 0 when success, -1 when failure happens.
  */
@@ -275,6 +309,16 @@ int MXAggregateProfileStatsPrint (const(char*)* out_str, int reset);
 
 /*!
  * \brief Pause profiler tuning collection
+ * \param paused If nonzero, profiling pauses. Otherwise, profiling resumes/continues
+ * \param profile_process integer which denotes whether to process worker or server process
+ * \param kvstoreHandle handle to kvstore
+ * \return 0 when success, -1 when failure happens.
+ * \note pausing and resuming is global and not recursive
+ */
+int MXProcessProfilePause (int paused, int profile_process, KVStoreHandle kvStoreHandle);
+
+/*!
+ * \brief Pause profiler tuning collection for worker/current process
  * \param paused If nonzero, profiling pauses. Otherwise, profiling resumes/continues
  * \return 0 when success, -1 when failure happens.
  * \note pausing and resuming is global and not recursive
@@ -383,6 +427,22 @@ int MXSetNumOMPThreads (int thread_num);
  * \param prev_bulk_size previous bulk_size
  */
 int MXEngineSetBulkSize (int bulk_size, int* prev_bulk_size);
+
+/*!
+ * \brief Get the number of GPUs.
+ * \param pointer to int that will hold the number of GPUs available.
+ * \return 0 when success, -1 when failure happens.
+ */
+int MXGetGPUCount (int* out_);
+
+/*!
+ * \brief get the free and total available memory on a GPU
+ * \param dev the GPU number to query
+ * \param free_mem pointer to the integer holding free GPU memory
+ * \param total_mem pointer to the integer holding total GPU memory
+ * \return 0 when success, -1 when failure happens
+ */
+int MXGetGPUMemoryInformation (int dev, int* free_mem, int* total_mem);
 
 /*!
  * \brief get the MXNet library version as an integer
@@ -607,7 +667,7 @@ int MXNDArrayReshape (NDArrayHandle handle, int ndim, int* dims, NDArrayHandle* 
  * \param out the NDArrayHandle of reshaped NDArray
  * \return 0 when success, -1 when failure happens
  */
-int MXNDArrayReshape64 (NDArrayHandle handle, int ndim, dim_t* dims, NDArrayHandle* out_);
+int MXNDArrayReshape64 (NDArrayHandle handle, int ndim, dim_t* dims, bool reverse, NDArrayHandle* out_);
 /*!
  * \brief get the shape of the array
  * \param handle the handle to the narray
@@ -855,7 +915,7 @@ int MXCreateCachedOp (SymbolHandle handle, CachedOpHandle* out_);
 /*!
  * \brief create cached operator
  */
-int MXCreateCachedOpEx (SymbolHandle handle, int num_params, const(char*)* keys, const(char*)* vals, CachedOpHandle* out_);
+int MXCreateCachedOpEx (SymbolHandle handle, int num_flags, const(char*)* keys, const(char*)* vals, CachedOpHandle* out_);
 /*!
  * \brief free cached operator
  */
@@ -903,6 +963,26 @@ int MXSymbolListAtomicSymbolCreators (mx_uint* out_size, AtomicSymbolCreator** o
  * \param name The returned name of the creator.
  */
 int MXSymbolGetAtomicSymbolName (AtomicSymbolCreator creator, const(char*)* name);
+
+/*!
+ * \brief Get the input symbols of the graph.
+ * \param sym The graph.
+ * \param inputs The input symbols of the graph.
+ * \param input_size the number of input symbols returned.
+ */
+int MXSymbolGetInputSymbols (SymbolHandle sym, SymbolHandle** inputs, int* input_size);
+
+/*!
+ * \brief Cut a subgraph whose nodes are marked with a subgraph attribute.
+ * The input graph will be modified. A variable node will be created for each
+ * edge that connects to nodes outside the subgraph. The outside nodes that
+ * connect to the subgraph will be returned.
+ * \param sym The graph.
+ * \param inputs The nodes that connect to the subgraph.
+ * \param input_size The number of such nodes.
+ */
+int MXSymbolCutSubgraph (SymbolHandle sym, SymbolHandle** inputs, int* input_size);
+
 /*!
  * \brief Get the detailed information about atomic symbol.
  * \param creator the AtomicSymbolCreator.
@@ -1202,8 +1282,9 @@ int MXSymbolInferType (SymbolHandle sym, mx_uint num_args, const(char*)* keys, c
  * \param excluded_symbols array of symbols to be excluded from being quantized
  * \param num_offline number of parameters that are quantized offline
  * \param offline_params array of c strings representing the names of params quantized offline
+ * \param quantized_dtype the quantized destination type for input data.
  */
-int MXQuantizeSymbol (SymbolHandle sym_handle, SymbolHandle* ret_sym_handle, const mx_uint num_excluded_symbols, const(SymbolHandle)* excluded_symbols, const mx_uint num_offline, const(char*)* offline_params);
+int MXQuantizeSymbol (SymbolHandle sym_handle, SymbolHandle* ret_sym_handle, const mx_uint num_excluded_symbols, const(SymbolHandle)* excluded_symbols, const mx_uint num_offline, const(char*)* offline_params, const(char)* quantized_dtype);
 
 /*!
  * \brief Set calibration table to node attributes in the sym
@@ -1334,6 +1415,35 @@ int MXExecutorBindX (SymbolHandle symbol_handle, int dev_type, int dev_id, mx_ui
 int MXExecutorBindEX (SymbolHandle symbol_handle, int dev_type, int dev_id, mx_uint num_map_keys, const(char*)* map_keys, const(int)* map_dev_types, const(int)* map_dev_ids, mx_uint len, NDArrayHandle* in_args, NDArrayHandle* arg_grad_store, mx_uint* grad_req_type, mx_uint aux_states_len, NDArrayHandle* aux_states, ExecutorHandle shared_exec, ExecutorHandle* out_);
 
 int MXExecutorSimpleBind (SymbolHandle symbol_handle, int dev_type, int dev_id, const mx_uint num_g2c_keys, const(char*)* g2c_keys, const(int)* g2c_dev_types, const(int)* g2c_dev_ids, const mx_uint provided_grad_req_list_len, const(char*)* provided_grad_req_names, const(char*)* provided_grad_req_types, const mx_uint num_provided_arg_shapes, const(char*)* provided_arg_shape_names, const(mx_uint)* provided_arg_shape_data, const(mx_uint)* provided_arg_shape_idx, const mx_uint num_provided_arg_dtypes, const(char*)* provided_arg_dtype_names, const(int)* provided_arg_dtypes, const mx_uint num_provided_arg_stypes, const(char*)* provided_arg_stype_names, const(int)* provided_arg_stypes, const mx_uint num_shared_arg_names, const(char*)* shared_arg_name_list, int* shared_buffer_len, const(char*)* shared_buffer_name_list, NDArrayHandle* shared_buffer_handle_list, const(char**)* updated_shared_buffer_name_list, NDArrayHandle** updated_shared_buffer_handle_list, mx_uint* num_in_args, NDArrayHandle** in_args, NDArrayHandle** arg_grads, mx_uint* num_aux_states, NDArrayHandle** aux_states, ExecutorHandle shared_exec_handle, ExecutorHandle* out_);
+
+/*!
+ * \brief Return a new executor with the same symbol and shared memory,
+ * but different input/output shapes.
+ *
+ * \param partial_shaping Whether to allow changing the shape of unspecified arguments.
+ * \param allow_up_sizing Whether to allow allocating new ndarrays that's larger than the original.
+ * \param dev_type device type of default context
+ * \param dev_id device id of default context
+ * \param num_map_keys size of group2ctx map
+ * \param map_keys keys of group2ctx map
+ * \param map_dev_types device type of group2ctx map
+ * \param map_dev_ids device id of group2ctx map
+ * \param num_in_args length of in_args
+ * \param in_args in args array
+ * \param arg_grads arg grads handle array
+ * \param num_aux_states length of auxiliary states
+ * \param aux_states auxiliary states array
+ * \param shared_exec input executor handle for memory sharing
+ * \param out output executor handle
+ * \return a new executor
+ */
+int MXExecutorReshape (int partial_shaping, int allow_up_sizing, int dev_type, int dev_id, mx_uint num_map_keys, const(char*)* map_keys, const(int)* map_dev_types, const(int)* map_dev_ids, const mx_uint num_provided_arg_shapes, const(char*)* provided_arg_shape_names, const(mx_uint)* provided_arg_shape_data, const(mx_uint)* provided_arg_shape_idx, mx_uint* num_in_args, NDArrayHandle** in_args, NDArrayHandle** arg_grads, mx_uint* num_aux_states, NDArrayHandle** aux_states, ExecutorHandle shared_exec, ExecutorHandle* out_);
+
+/*!
+ * \brief get optimized graph from graph executor
+ */
+int MXExecutorGetOptimizedSymbol (ExecutorHandle handle, SymbolHandle* out_);
+
 /*!
  * \brief set a call back to notify the completion of operation
  */
@@ -1502,6 +1612,28 @@ int MXKVStorePushEx (KVStoreHandle handle, mx_uint num, const(char*)* keys, NDAr
  * \param keys the list of keys
  * \param vals the list of values
  * \param priority the priority of the action
+ * \param ignore_sparse whether to ignore sparse arrays in the request
+ * \return 0 when success, -1 when failure happens
+ */
+int MXKVStorePullWithSparse (KVStoreHandle handle, mx_uint num, const(int)* keys, NDArrayHandle* vals, int priority, bool ignore_sparse);
+/*!
+ * \brief pull a list of (key, value) pairs from the kvstore, where each key is a string
+ * \param handle handle to the kvstore
+ * \param num the number of key-value pairs
+ * \param keys the list of keys
+ * \param vals the list of values
+ * \param priority the priority of the action
+ * \param ignore_sparse whether to ignore sparse arrays in the request
+ * \return 0 when success, -1 when failure happens
+ */
+int MXKVStorePullWithSparseEx (KVStoreHandle handle, mx_uint num, const(char*)* keys, NDArrayHandle* vals, int priority, bool ignore_sparse);
+/*!
+ * \brief pull a list of (key, value) pairs from the kvstore
+ * \param handle handle to the kvstore
+ * \param num the number of key-value pairs
+ * \param keys the list of keys
+ * \param vals the list of values
+ * \param priority the priority of the action
  * \return 0 when success, -1 when failure happens
  */
 int MXKVStorePull (KVStoreHandle handle, mx_uint num, const(int)* keys, NDArrayHandle* vals, int priority);
@@ -1656,8 +1788,7 @@ int MXKVStoreSetBarrierBeforeExit (KVStoreHandle handle, const int barrier_befor
 alias MXKVStoreServerController = void function (int head, const(char)* body_, void* controller_handle);
 
 /**
- * \return Run as server (or scheduler)
- *
+ * \brief Run as server (or scheduler)
  * \param handle handle to the KVStore
  * \param controller the user-defined server controller
  * \param controller_handle helper handle for implementing controller
@@ -1666,8 +1797,7 @@ alias MXKVStoreServerController = void function (int head, const(char)* body_, v
 int MXKVStoreRunServer (KVStoreHandle handle, void function () controller, void* controller_handle);
 
 /**
- * \return Send a command to all server nodes
- *
+ * \brief Send a command to all server nodes
  * \param handle handle to the KVStore
  * \param cmd_id the head of the command
  * \param cmd_body the body of the command
