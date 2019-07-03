@@ -39,6 +39,8 @@
 
 module mxnet.c.c_api;
 
+import core.stdc.config;
+
 extern (C):
 
 /*! \brief Inhibit C++ name-mangling for MXNet functions. */
